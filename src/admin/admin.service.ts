@@ -4,9 +4,12 @@ import { CreateAdminDto } from './dto/create-admin.dto';
 @Injectable()
 export class AdminService {
   private admins: any[] = []; // in-memory storage for simplicity
+  // simple auto-increment id generator for in-memory storage
+  private nextId = 1;
 
   create(createAdminDto: CreateAdminDto) {
-    const admin = { id: Date.now().toString(), ...createAdminDto };
+    // generate a small, human-friendly incremental id as a string
+    const admin = { id: (this.nextId++).toString(), ...createAdminDto };
     this.admins.push(admin);
     return { message: 'Admin created', data: admin };
   }
@@ -56,5 +59,3 @@ export class AdminService {
     return { message: 'Role assigned', id, role };
   }
 }
-
-implement admin module with CRUD operations and DTO
