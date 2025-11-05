@@ -34,10 +34,11 @@ export class AdminController {
   ) {
     return this.adminService.partialUpdate(id, partialAdminDto);
   }
-  @Get('search')
-  searchadmins(@Query('name')name:string){
-    return this.adminService.searchByName(name);
-  }
+@Get('search')
+searchAdmin(@Query('name') name: string) {
+  return this.adminService.searchByName(name);
+}
+
 
 
   @Delete(':id')

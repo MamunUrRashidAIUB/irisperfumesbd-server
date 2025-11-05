@@ -50,12 +50,9 @@ export class AdminService {
     return { message: `Admin ${id} removed` };
   }
 searchByName(name: string) {
-  const found = this.admins.filter(admin =>
-    admin.name.toLowerCase().includes(name.toLowerCase())
-  );
-  if (found.length === 0) return { message: 'Admin not found' };
-  return found;
+  return this.admins.filter(a => a.name.includes(name));
 }
+
 
 
 
