@@ -49,13 +49,19 @@ export class AdminService {
     this.admins.splice(index, 1);
     return { message: `Admin ${id} removed` };
   }
-searchByName(name: string) {
-  return this.admins.filter(a => a.name.includes(name));
-}
+  searchByName(name?: string) {
+    // Validate the name query and return names-only (case-insensitive)
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      return { names: [] };
+    }
 
+    const q = name.toLowerCase();
+    const results = this.admins.filter(
+      (a) => typeof a.name === 'string' && a.name.toLowerCase().includes(q),
+    );
 
-
-
+    return { names: results.map((a) => a.name) };
+  }
   getPermissions(id: string) {
     const admin = this.admins.find(a => a.id === id);
     if (!admin) return { message: 'Admin not found' };

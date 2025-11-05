@@ -15,12 +15,17 @@ export class AdminController {
   findAll(@Query('role') role?: string) {
     return this.adminService.findAll(role);
   }
+   @Get('search')
+  searchAdmin(@Query('name') name: string) {
+    return this.adminService.searchByName(name);
+  }
+ 
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    
     return this.adminService.findOne(id);
   }
+
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateAdminDto: CreateAdminDto) {
@@ -34,13 +39,6 @@ export class AdminController {
   ) {
     return this.adminService.partialUpdate(id, partialAdminDto);
   }
-@Get('search')
-searchAdmin(@Query('name') name: string) {
-  return this.adminService.searchByName(name);
-}
-
-
-
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.adminService.remove(id);
