@@ -18,23 +18,23 @@ export class SellerController {
     }
 
     @Get('perfumes/:id')
-    findOne(@Param('id') id: number) {
-        return this.sellerService.findOnePerfume(id);
+    findOne(@Param('id') id: string) {
+        return this.sellerService.findOnePerfume(Number(id));
     }
 
     @Put('perfumes/:id')
-    update(@Param('id') id: number, @Body() updatePerfumeDto: UpdatePerfumeDto) {
-        return this.sellerService.updatePerfume(id, updatePerfumeDto);
+    update(@Param('id') id: string, @Body() updatePerfumeDto: UpdatePerfumeDto) {
+        return this.sellerService.updatePerfume(Number(id), updatePerfumeDto);
     }
 
     @Patch('perfumes/:id/stock')
-    updateStock(@Param('id') id: number, @Body('quantity') quantity: number) {
-        return this.sellerService.updateStock(id, quantity);
+    updateStock(@Param('id') id: string, @Body('quantity') quantity: number) {
+        return this.sellerService.updateStock(Number(id), quantity);
     }
 
     @Delete('perfumes/:id')
-    remove(@Param('id') id: number) {
-        return this.sellerService.removePerfume(id);
+    remove(@Param('id') id: string) {
+        return this.sellerService.removePerfume(Number(id));
     }
 
     @Get('orders')
@@ -43,8 +43,8 @@ export class SellerController {
     }
 
     @Patch('orders/:id/status')
-    updateOrderStatus(@Param('id') id: number, @Body('status') status: string) {
-        return this.sellerService.updateOrderStatus(id, status);
+    updateOrderStatus(@Param('id') id: string, @Body('status') status: string) {
+        return this.sellerService.updateOrderStatus(Number(id), status);
     }
 
 }
