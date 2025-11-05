@@ -18,6 +18,7 @@ export class AdminController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
+    
     return this.adminService.findOne(id);
   }
 
@@ -27,9 +28,17 @@ export class AdminController {
   }
 
   @Patch(':id')
-  partialUpdate(@Param('id') id: string, @Body() partialAdminDto: Partial<CreateAdminDto>) {
+  partialUpdate(
+    @Param('id') id: string,
+    @Body() partialAdminDto: Partial<CreateAdminDto>,
+  ) {
     return this.adminService.partialUpdate(id, partialAdminDto);
   }
+  @Get('search')
+  searchadmins(@Query('name')name:string){
+    return this.adminService.searchByName(name);
+  }
+
 
   @Delete(':id')
   remove(@Param('id') id: string) {
@@ -46,4 +55,3 @@ export class AdminController {
     return this.adminService.assignRole(id, role);
   }
 }
- 

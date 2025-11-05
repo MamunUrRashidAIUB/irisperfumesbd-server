@@ -1,3 +1,4 @@
+
 import { Injectable } from '@nestjs/common';
 import { CreateAdminDto } from './dto/create-admin.dto';
 
@@ -26,14 +27,17 @@ export class AdminService {
   }
 
   update(id: string, updateAdminDto: CreateAdminDto) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const admin = this.admins.find(a => a.id === id);
     if (!admin) return { message: 'Admin not found' };
     Object.assign(admin, updateAdminDto);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     return { message: 'Admin updated', data: admin };
   }
 
   partialUpdate(id: string, partialAdminDto: Partial<CreateAdminDto>) {
-    const admin = this.admins.find(a => a.id === id);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const admin = this.admins.find((a) => a.id === id);
     if (!admin) return { message: 'Admin not found' };
     Object.assign(admin, partialAdminDto);
     return { message: 'Admin partially updated', data: admin };
@@ -45,6 +49,15 @@ export class AdminService {
     this.admins.splice(index, 1);
     return { message: `Admin ${id} removed` };
   }
+searchByName(name: string) {
+  const found = this.admins.filter(admin =>
+    admin.name.toLowerCase().includes(name.toLowerCase())
+  );
+  if (found.length === 0) return { message: 'Admin not found' };
+  return found;
+}
+
+
 
   getPermissions(id: string) {
     const admin = this.admins.find(a => a.id === id);
