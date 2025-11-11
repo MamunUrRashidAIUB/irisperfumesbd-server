@@ -1,12 +1,14 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UsePipes } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
+import { AdminValidationPipe } from './admin-validation.pipe';
 
 @Controller('admins')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Post()
+  @UsePipes(new AdminValidationPipe())
   create(@Body() createAdminDto: CreateAdminDto) {
     return this.adminService.create(createAdminDto);
   }
