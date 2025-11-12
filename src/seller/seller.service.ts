@@ -1,8 +1,15 @@
-import { CreatePerfumeDto } from './dto/create-seller.dto';
+import { CreatePerfumeDto, SellerRegistrationDto } from './dto/create-seller.dto';
 import { Injectable } from '@nestjs/common';
 import { UpdatePerfumeDto } from './dto/update-seller.dto';
 @Injectable()
 export class SellerService {
+    registerSeller(sellerDto: SellerRegistrationDto) {
+        return {
+            success: true,
+            message: 'Seller registered successfully',
+            data: sellerDto,
+        };
+    }
     private perfumes: any[] = [];
     private orders: any[] = [];
     private perfumeId = 1;

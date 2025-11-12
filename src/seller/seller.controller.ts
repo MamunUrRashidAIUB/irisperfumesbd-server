@@ -1,11 +1,16 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query } from "@nestjs/common";
 import { SellerService } from "./seller.service";
-import { CreatePerfumeDto } from "./dto/create-seller.dto";
+import { CreatePerfumeDto, SellerRegistrationDto } from "./dto/create-seller.dto";
 import { UpdatePerfumeDto } from "./dto/update-seller.dto";
 
 @Controller('seller')
 export class SellerController {
     constructor(private readonly sellerService: SellerService) {}
+
+    @Post('register')
+    registerSeller(@Body() sellerDto: SellerRegistrationDto) {
+        return this.sellerService.registerSeller(sellerDto);
+    }
 
     @Post('perfumes')
     create(@Body() createPerfumeDto: CreatePerfumeDto) {
@@ -17,10 +22,10 @@ export class SellerController {
         return this.sellerService.findAllPerfumes(brand);
     }
 
-    @Get('perfumes/:id')
-    findOne(@Param('id') id: string) {
-        return this.sellerService.findOnePerfume(Number(id));
-    }
+@Get('perfumes/:id')
+  findOne(@Param('id') id: number) {
+    return this.sellerService.findOnePerfume(id);
+  }
 
     @Put('perfumes/:id')
     update(@Param('id') id: string, @Body() updatePerfumeDto: UpdatePerfumeDto) {
