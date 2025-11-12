@@ -14,7 +14,8 @@ export class DeliveryService {
       createdAt: new Date(),
     };
     this.deliveries.push(newDelivery);
-    return { message: 'Delivery created successfully', data: newDelivery };
+    return { message: 'Delivery created successfully', 
+             data: newDelivery };
   }
 
   findAll() {
