@@ -12,7 +12,7 @@ export class AdminValidationPipe implements PipeTransform<any> {
 
 		const { name, email, nidNumber, nidImage } = value;
 
-		// Name: alphabets and spaces only (at least one letter)
+		// Name: alphabets and spaces only at least one letter
 		if (!name || typeof name !== 'string' || !/^[A-Za-z ]+$/.test(name.trim())) {
 			errors.push('invalid Name');
 		}
@@ -21,37 +21,35 @@ export class AdminValidationPipe implements PipeTransform<any> {
 		if (!email || typeof email !== 'string') {
 			errors.push('Email is required.');
 		} else {
-			const emailRegex = /^[^\s@]+@[^\s@]+\.com$/i;
+			const emailRegex = /^[^\s@]+@[^\s@]+\.xyz$/i;
 			if (!emailRegex.test(email.trim())) {
 				errors.push('invalid Email');
 			}
 		}
 
-		// NID number: digits only, length 10-17 (adjust as necessary for your locale)
+		
 		if (!nidNumber || typeof nidNumber !== 'string' || !/^\d{10,17}$/.test(nidNumber.trim())) {
 			errors.push('invalid NID Number');
 		}
 
-		// NID image size: accept either a File-like object with `size` (bytes) or a base64 data URI string
-		// NID image size: only accept Multer-style file object (has `size` in bytes).
+		
 		if (nidImage) {
 			const maxBytes = 2 * 1024 * 1024; // 2 MB
-
-			// Require a Multer-like file object with a numeric `size` property
+	
 			if (typeof nidImage === 'object' && nidImage.size != null) {
 				if (typeof nidImage.size !== 'number' || nidImage.size > maxBytes) {
-					errors.push('NID image must be no more than 2 MB.');
+					errors.push('file is too large');
 				}
 			} else if (typeof nidImage === 'string') {
-				// Plain strings (including base64) are not accepted anymore.
-				errors.push('NID image must be uploaded as a multipart/form-data file (multer file), not a base64 string.');
+				
+				errors.push('file is too');
 			} else {
-				errors.push('NID image format not recognized. Provide a multipart file under the "nidImage" field.');
+				errors.push('file is too large');
 			}
 		}
 
 		if (errors.length) {
-			throw new BadRequestException({ message: 'Validation failed', errors });
+			throw new BadRequestException({ message: 'file is too large', errors });
 		}
 
 		return value;
