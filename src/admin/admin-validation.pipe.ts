@@ -33,33 +33,20 @@ export class AdminValidationPipe implements PipeTransform<any> {
 		}
 
 		// NID image size: accept either a File-like object with `size` (bytes) or a base64 data URI string
+		// NID image size: only accept Multer-style file object (has `size` in bytes).
 		if (nidImage) {
 			const maxBytes = 2 * 1024 * 1024; // 2 MB
 
-			// Multer-like file object
+			// Require a Multer-like file object with a numeric `size` property
 			if (typeof nidImage === 'object' && nidImage.size != null) {
 				if (typeof nidImage.size !== 'number' || nidImage.size > maxBytes) {
 					errors.push('NID image must be no more than 2 MB.');
 				}
 			} else if (typeof nidImage === 'string') {
-				// data URI: data:[<mediatype>][;base64],<data>
-				const match = nidImage.match(/^data:([a-zA-Z0-9/+.-]+\/[^;]+);base64,(.+)$/);
-				if (match) {
-					try {
-						const base64 = match[2];
-						const buffer = Buffer.from(base64, 'base64');
-						if (buffer.length > maxBytes) {
-							errors.push('NID image (base64) must be no more than 2 MB.');
-						}
-					} catch (e) {
-						errors.push('NID image is not a valid base64 data URI.');
-					}
-				} else {
-					// Not a data URI; we cannot determine size reliably. Reject to be safe.
-					errors.push('NID image must be a file upload or a base64 data URI string.');
-				}
+				// Plain strings (including base64) are not accepted anymore.
+				errors.push('NID image must be uploaded as a multipart/form-data file (multer file), not a base64 string.');
 			} else {
-				errors.push('NID image format not recognized.');
+				errors.push('NID image format not recognized. Provide a multipart file under the "nidImage" field.');
 			}
 		}
 
