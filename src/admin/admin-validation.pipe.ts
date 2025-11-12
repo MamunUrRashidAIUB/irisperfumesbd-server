@@ -2,18 +2,7 @@ import { Injectable, PipeTransform, BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class AdminValidationPipe implements PipeTransform<any> {
-	/**
-	 * Validates user category 1 rules:
-	 * - name: alphabets and spaces only
-	 * - email: required and must be in the .xyz domain (contain @ and end with .xyz)
-	 * - nidNumber: digits only, length between 10 and 17 (assumption for typical NID formats)
-	 * - nidImage: if present, must be <= 2 MB. Supports either a Multer File object (has `size`) or
-	 *   a base64 data URI string (data:image/...).
-	 *
-	 * Notes/assumptions:
-	 * - This pipe validates the request body. For files uploaded via multipart, ensure the controller
-	 *   has used an interceptor (e.g. FileInterceptor) so the file is attached to the request as `nidImage`.
-	 */
+	
 	transform(value: any) {
 		const errors: string[] = [];
 
@@ -25,22 +14,22 @@ export class AdminValidationPipe implements PipeTransform<any> {
 
 		// Name: alphabets and spaces only (at least one letter)
 		if (!name || typeof name !== 'string' || !/^[A-Za-z ]+$/.test(name.trim())) {
-			errors.push('Name is required and must contain only alphabets and spaces.');
+			errors.push('invalid Name');
 		}
 
 		// Email: required and must contain @ and end with .xyz domain
 		if (!email || typeof email !== 'string') {
 			errors.push('Email is required.');
 		} else {
-			const emailRegex = /^[^\s@]+@[^\s@]+\.xyz$/i;
+			const emailRegex = /^[^\s@]+@[^\s@]+\.com$/i;
 			if (!emailRegex.test(email.trim())) {
-				errors.push('Email must be a valid address and use the .xyz domain (e.g. user@domain.xyz).');
+				errors.push('invalid Email');
 			}
 		}
 
 		// NID number: digits only, length 10-17 (adjust as necessary for your locale)
 		if (!nidNumber || typeof nidNumber !== 'string' || !/^\d{10,17}$/.test(nidNumber.trim())) {
-			errors.push('NID number is required and must be digits only (length between 10 and 17).');
+			errors.push('invalid NID Number');
 		}
 
 		// NID image size: accept either a File-like object with `size` (bytes) or a base64 data URI string
