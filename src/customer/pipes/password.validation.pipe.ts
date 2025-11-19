@@ -2,11 +2,9 @@ import { PipeTransform, BadRequestException } from '@nestjs/common';
 
 export class PasswordValidationPipe implements PipeTransform {
   transform(value: any) {
-    if (value.password.length < 6) {
-      throw new BadRequestException('Password must be at least 6 characters');
-    }
+    const regex = /^(?=.*[a-z]).{6,}$/; 
 
-    if (!/[a-z]/.test(value.password)) {
+    if (!value.password || !regex.test(value.password)) {
       throw new BadRequestException('Password must contain a lowercase letter');
     }
 
