@@ -61,9 +61,9 @@ export class SellerController {
   @Patch(':id/phone')
   updatePhone(
     @Param('id') id: string,
-    @Body() dto: UpdatePhoneDto,
+    @Body() UpdatePhoneDto: UpdatePhoneDto,
   ) {
-    return this.sellerService.updatePhone(id, dto);
+    return this.sellerService.updatePhone(id, UpdatePhoneDto);
   }
 
   @Get('null-name')
