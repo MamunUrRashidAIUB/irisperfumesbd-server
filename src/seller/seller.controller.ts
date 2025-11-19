@@ -1,7 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query } from "@nestjs/common";
 import { SellerService } from "./seller.service";
-import { CreatePerfumeDto, SellerRegistrationDto } from "./dto/create-seller.dto";
+import { CreatePerfumeDto, CreateSellerDto, SellerRegistrationDto } from "./dto/create-seller.dto";
 import { UpdatePerfumeDto } from "./dto/update-seller.dto";
+import { UpdatePhoneDto } from "./dto/update-phone.dto";
 
 @Controller('seller')
 export class SellerController {
@@ -22,10 +23,10 @@ export class SellerController {
         return this.sellerService.findAllPerfumes(brand);
     }
 
-@Get('perfumes/:id')
-  findOne(@Param('id') id: number) {
+    @Get('perfumes/:id')
+    findOne(@Param('id') id: number) {
     return this.sellerService.findOnePerfume(id);
-  }
+    }
 
     @Put('perfumes/:id')
     update(@Param('id') id: string, @Body() updatePerfumeDto: UpdatePerfumeDto) {
@@ -51,5 +52,28 @@ export class SellerController {
     updateOrderStatus(@Param('id') id: string, @Body('status') status: string) {
         return this.sellerService.updateOrderStatus(Number(id), status);
     }
+
+    @Post()
+  createSeller(@Body() dto: CreateSellerDto) {
+    return this.sellerService.createSeller(dto);
+  }
+
+  @Patch(':id/phone')
+  updatePhone(
+    @Param('id') id: string,
+    @Body() dto: UpdatePhoneDto,
+  ) {
+    return this.sellerService.updatePhone(id, dto);
+  }
+
+  @Get('null-name')
+  findNullNames() {
+    return this.sellerService.findNullFullName();
+  }
+
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+    return this.sellerService.deleteSeller(id);
+  }
 
 }

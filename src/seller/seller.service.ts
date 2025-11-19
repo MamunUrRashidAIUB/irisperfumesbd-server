@@ -1,6 +1,10 @@
-import { CreatePerfumeDto, SellerRegistrationDto } from './dto/create-seller.dto';
+import { CreatePerfumeDto, CreateSellerDto, SellerRegistrationDto } from './dto/create-seller.dto';
 import { Injectable } from '@nestjs/common';
 import { UpdatePerfumeDto } from './dto/update-seller.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Seller } from './entities/seller.entity';
+import { IsNull, Repository } from 'typeorm';
+import { UpdatePhoneDto } from './dto/update-phone.dto';
 @Injectable()
 export class SellerService {
     registerSeller(sellerDto: SellerRegistrationDto) {
@@ -68,5 +72,33 @@ updateStock(id: number, quantity: number) {
     if (!order) return { success: false, message: 'Order not found' };
     order.status = status;
     return { success: true, message: 'Order status updated', data: order };
+  }
+
+   constructor(
+    @InjectRepository(Seller) private repo: Repository<Seller>,
+  ) {}
+
+  // 1. Create Seller
+  createSeller(dto: CreateSellerDto) {
+    const seller = this.repo.create(dto);
+    return this.repo.save(seller);
+  }
+
+  // 2. Update Seller Phone
+  async updatePhone(id: string, dto: UpdatePhoneDto) {
+    await this.repo.update(id, dto);
+    return this.repo.findOne({ where: { id } });
+  }
+
+  // 3. Find sellers with fullName = NULL
+  findNullFullName() {
+    return this.repo.find({
+      where: { fullName: IsNull() },
+    });
+  }
+
+  // 4. Delete a seller
+  deleteSeller(id: string) {
+    return this.repo.delete(id);
   }
 }

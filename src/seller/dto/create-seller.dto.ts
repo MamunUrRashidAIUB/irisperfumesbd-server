@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, Matches, MinLength, IsIn, IsNumberString } from 'class-validator';
+import { IsEmail, IsNotEmpty, Matches, MinLength, IsIn, IsNumberString, IsNumber, IsString, IsOptional } from 'class-validator';
 
 export class CreatePerfumeDto {
   @IsNotEmpty()
@@ -32,4 +32,14 @@ export class SellerRegistrationDto {
 
   @IsNumberString({}, { message: 'Phone number must contain only digits' })
   phone: string;
+}
+
+export class CreateSellerDto {
+  @IsOptional()
+  
+  @IsString()
+  fullName?: string;
+
+  @IsNumber()
+  phone: number;
 }
