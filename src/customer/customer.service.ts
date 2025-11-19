@@ -8,10 +8,11 @@ export class CustomerService {
   private nextId = 1;
 
   // Customer creates an account
-  register(dto: CreateCustomerDto) {
+  create(dto: CreateCustomerDto & { file?: Express.Multer.File }) {
     const customer = { id: (this.nextId++).toString(), ...dto };
     this.customers.push(customer);
-    return { message: 'Account created', data: customer };
+     const customerSafe = { ...customer, file: customer.file?.originalname };
+    return { message: 'Account created', data: customerSafe };
   }
 
   // Customer views their own profile
@@ -75,4 +76,3 @@ export class CustomerService {
     return { message: 'Added to wishlist', data: customer };
   }
 }
-

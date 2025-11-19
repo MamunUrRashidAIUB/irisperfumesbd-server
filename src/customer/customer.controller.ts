@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UsePipes, UploadedFile,UseInterceptors, } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UsePipes, UploadedFile,UseInterceptors, BadRequestException, } from '@nestjs/common';
 import { CustomerService } from './customer.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { NameValidationPipe } from './pipes/name.validation.pipe';
@@ -14,11 +14,39 @@ export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
   //  Customer signs up or is created
-  @Post()
-  register(@Body() createCustomerDto: CreateCustomerDto) {
-    return this.customerService.register(createCustomerDto);
-  }
+ 
+ 
+@Post()
+@UseInterceptors(FileInterceptor('file'))
+async createCustomer(
+  @UploadedFile() file: Express.Multer.File,
+  @Body() body: any, 
+) {
+  // Merge form-data and file into one object
+  const dto: CreateCustomerDto & { file?: Express.Multer.File } = { ...body, file };
 
+  // Apply your existing pipes manually
+  new NameValidationPipe().transform(dto);
+  new PasswordValidationPipe().transform(dto);
+  new PhoneValidationPipe().transform(dto);
+
+  // PDF validation
+  if (!file) throw new BadRequestException('PDF file is required');
+  if (!file.mimetype.includes('pdf')) throw new BadRequestException('Only PDF files allowed');
+
+  const customer = this.customerService.create(dto);
+
+ 
+  return {
+    message: 'Customer created successfully',
+    data: {
+      id: customer.data.id,
+      name: customer.data.name,
+      email: customer.data.email,
+      fileName: file.originalname, 
+    },
+  };
+}
   //  Customers can search products or filter their own info
   @Get(':id')
   findOne(@Param('id') id: string) {
@@ -54,18 +82,19 @@ export class CustomerController {
   addToWishlist(@Param('id') id: string, @Body('productId') productId: string) {
     return this.customerService.addToWishlist(id, productId);
   }
-  @UsePipes(NameValidationPipe, PasswordValidationPipe, PhoneValidationPipe)
-@Post()
-create(@Body() dto: CreateCustomerDto) {
-  return this.customerService.register(dto);
-}
+//   @UsePipes(NameValidationPipe, PasswordValidationPipe, PhoneValidationPipe)
+// @Post()
+// create(@Body() dto: CreateCustomerDto) {
+//   return this.customerService.register(dto);
+// }
 
 
-@UseInterceptors(FileInterceptor('file'))
-@Post('upload')
-uploadPdf(@UploadedFile(PdfValidationPipe) file: Express.Multer.File) {
-  return { message: 'PDF uploaded successfully' };
-}
+
+// @Post('upload')
+// @UseInterceptors(FileInterceptor('file'))
+// uploadPdf(@UploadedFile(PdfValidationPipe) file: Express.Multer.File) {
+//   return { message: 'PDF uploaded successfully' };
+// }
 
 
 
