@@ -24,6 +24,13 @@ export class UserController {
     return this.userService.changeStatus(id, status);
   }
 
+  @Get(':id/name')
+  async getNameById(@Param('id') id: string) {
+    const user = await this.userService.findByIdString(id);
+   
+
+  }
+
   // Retrieve list of users with 'inactive' status
   @Get('inactive')
   async getInactive() {
