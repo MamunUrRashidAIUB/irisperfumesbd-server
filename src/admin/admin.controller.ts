@@ -1,12 +1,14 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UsePipes, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseInterceptors, UploadedFile, UseGuards, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { AdminValidationPipe } from './admin-validation.pipe';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AuthService } from '../auth/auth.service';
 
 @Controller('admins')
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(private readonly adminService: AdminService, private readonly authService: AuthService) {}
 
   @Post()
   @UseInterceptors(FileInterceptor('nidImage'))
@@ -21,8 +23,19 @@ export class AdminController {
     const pipe = new AdminValidationPipe();
     await pipe.transform(payload);
 
-    // pass the original DTO (service can use nidImage from payload if needed)
     return this.adminService.create(payload);
+  }
+
+  @Post('login')
+  async login(@Body('email') email: string, @Body('password') password: string) {
+    try {
+      const admin = await this.authService.validateAdmin(email, password);
+      if (!admin) throw new UnauthorizedException('Invalid credentials');
+      return this.authService.login(admin);
+    } catch (err: any) {
+      if (err instanceof UnauthorizedException) throw err;
+      throw new InternalServerErrorException(err?.message || 'Internal server error');
+    }
   }
 
   @Get()
@@ -36,7 +49,7 @@ export class AdminController {
  
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.adminService.findOne(id);
   }
 

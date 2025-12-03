@@ -1,77 +1,107 @@
-
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateAdminDto } from './dto/create-admin.dto';
+import { Admin } from './entity/admin.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
-  private admins: any[] = []; // in-memory storage for simplicity
-  // simple auto-increment id generator for in-memory storage
-  private nextId = 1;
+  constructor(
+    @InjectRepository(Admin)
+    private readonly repo: Repository<Admin>,
+  ) {}
 
-  create(createAdminDto: CreateAdminDto) {
-    // generate a small, human-friendly incremental id as a string
-    const admin = { id: (this.nextId++).toString(), ...createAdminDto };
-    this.admins.push(admin);
-    return { message: 'Admin created', data: admin };
-  }
-
-  findAll(role?: string) {
-    if (role) {
-      return { admins: this.admins.filter(a => a.role === role) };
+  async create(createAdminDto: CreateAdminDto) {
+    const existing = await this.repo.findOneBy({ email: createAdminDto.email });
+    if (existing) {
+      throw new HttpException('Email already in use', HttpStatus.BAD_REQUEST);
     }
-    return { admins: this.admins };
+
+    const hashed = await bcrypt.hash(createAdminDto.password || '', 10);
+    const admin = this.repo.create({
+      name: createAdminDto.name,
+      email: createAdminDto.email,
+      password: hashed,
+      role: createAdminDto.role,
+      status: createAdminDto.status,
+    } as any);
+    const saved = await this.repo.save(admin);
+    return { message: 'Admin created', data: saved };
   }
 
-  findOne(id: string) {
-    return this.admins.find(a => a.id === id) || { message: 'Admin not found' };
+  async findAll(role?: string) {
+    if (role) {
+      const admins = await this.repo.find({ where: { role } });
+      return { admins };
+    }
+    const admins = await this.repo.find();
+    return { admins };
   }
 
-  update(id: string, updateAdminDto: CreateAdminDto) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const admin = this.admins.find(a => a.id === id);
-    if (!admin) return { message: 'Admin not found' };
+  async findOne(id: string) {
+    const n = Number(id);
+    if (!Number.isInteger(n)) return { message: 'Invalid id' };
+    const admin = await this.repo.findOne({ where: { id: n } });
+    if (!admin) throw new HttpException('Admin not found', HttpStatus.NOT_FOUND);
+    return admin;
+  }
+
+  async update(id: string, updateAdminDto: CreateAdminDto) {
+    const n = Number(id);
+    const admin = await this.repo.findOneBy({ id: n });
+    if (!admin) throw new HttpException('Admin not found', HttpStatus.NOT_FOUND);
     Object.assign(admin, updateAdminDto);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    return { message: 'Admin updated', data: admin };
+    const saved = await this.repo.save(admin);
+    return { message: 'Admin updated', data: saved };
   }
 
-  partialUpdate(id: string, partialAdminDto: Partial<CreateAdminDto>) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const admin = this.admins.find((a) => a.id === id);
-    if (!admin) return { message: 'Admin not found' };
+  async partialUpdate(id: string, partialAdminDto: Partial<CreateAdminDto>) {
+    const n = Number(id);
+    const admin = await this.repo.findOneBy({ id: n });
+    if (!admin) throw new HttpException('Admin not found', HttpStatus.NOT_FOUND);
     Object.assign(admin, partialAdminDto);
-    return { message: 'Admin partially updated', data: admin };
+    const saved = await this.repo.save(admin);
+    return { message: 'Admin partially updated', data: saved };
   }
 
-  remove(id: string) {
-    const index = this.admins.findIndex(a => a.id === id);
-    if (index === -1) return { message: 'Admin not found' };
-    this.admins.splice(index, 1);
+  async remove(id: string) {
+    const n = Number(id);
+    const admin = await this.repo.findOneBy({ id: n });
+    if (!admin) throw new HttpException('Admin not found', HttpStatus.NOT_FOUND);
+    await this.repo.remove(admin);
     return { message: `Admin ${id} removed` };
   }
-  searchByName(name?: string) {
-    // Validate the name query and return names-only (case-insensitive)
+
+  async searchByName(name?: string) {
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return { names: [] };
     }
-
     const q = name.toLowerCase();
-    const results = this.admins.filter(
-      (a) => typeof a.name === 'string' && a.name.toLowerCase().includes(q),
-    );
-
-    return { names: results.map((a) => a.name) };
+    const results = await this.repo
+      .createQueryBuilder('a')
+      .where('LOWER(a.name) LIKE :q', { q: `%${q}%` })
+      .getMany();
+    return { names: results.map((r) => r.name) };
   }
-  getPermissions(id: string) {
-    const admin = this.admins.find(a => a.id === id);
-    if (!admin) return { message: 'Admin not found' };
+
+  async getPermissions(id: string) {
+    const n = Number(id);
+    const admin = await this.repo.findOneBy({ id: n });
+    if (!admin) throw new HttpException('Admin not found', HttpStatus.NOT_FOUND);
     return { id, permissions: ['read', 'write'] };
   }
 
-  assignRole(id: string, role: string) {
-    const admin = this.admins.find(a => a.id === id);
-    if (!admin) return { message: 'Admin not found' };
+  async assignRole(id: string, role: string) {
+    const n = Number(id);
+    const admin = await this.repo.findOneBy({ id: n });
+    if (!admin) throw new HttpException('Admin not found', HttpStatus.NOT_FOUND);
     admin.role = role;
+    await this.repo.save(admin);
     return { message: 'Role assigned', id, role };
+  }
+
+  async findByEmail(email: string) {
+    return this.repo.findOne({ where: { email } });
   }
 }

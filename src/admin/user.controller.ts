@@ -27,8 +27,8 @@ export class UserController {
   @Get(':id/name')
   async getNameById(@Param('id') id: string) {
     const user = await this.userService.findByIdString(id);
-   
-
+    if (!user) return { message: 'User not found' };
+    return { id: user.id, fullName: user.fullName };
   }
 
   // Retrieve list of users with 'inactive' status
