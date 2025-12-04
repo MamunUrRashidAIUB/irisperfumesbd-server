@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Patch, Delete, Param, Body, Query, UsePipes, ValidationPipe, UploadedFile, UseInterceptors, BadRequestException, } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Param, Body, Query, UsePipes, ValidationPipe, UploadedFile, UseInterceptors, BadRequestException, ParseIntPipe } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -8,12 +8,15 @@ import { Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { UpdateCountryDto } from './dto/updateCountry.dto';
+import { UseGuards, Req } from '@nestjs/common';
+import { Request } from 'express';
 
 @Controller('delivery')
 export class DeliveryController {
   constructor(private readonly deliveryService: DeliveryService) {}
 
-  @Post()
+  /*@Post()
   @UsePipes(new ValidationPipe())
   create(@Body() dto: CreateDeliveryDto) {
     return this.deliveryService.create(dto);
@@ -57,7 +60,7 @@ export class DeliveryController {
   @Get('filter')
   filterDeliveries(@Query('status') status: string) {
    return this.deliveryService.filterByStatus(status);
- }
+ } */
  
  /* @Post('uploads')
  @UseInterceptors(
@@ -121,6 +124,38 @@ getFile(@Param('filename') filename: string, @Res() res: Response) {
   return res.sendFile(filePath);
 } */
 
+  @Post()
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  create(@Body() dto: CreateDeliveryDto) {
+    return this.deliveryService.create(dto);
+  }
+
+  @Patch(':id/country')
+  updateCountry(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdateCountryDto,
+  ) {
+    return this.deliveryService.updateCountry(id, body.country);
+  }
+
+  @Get()
+findAll() {
+  return this.deliveryService.findAll();
+}
+
+  @Get('by-date')
+  getByDate(@Query('date') date: string) {
+    return this.deliveryService.findByDate(date);
+  }
+
+  @Get('unknown')
+  getUnknown() {
+    return this.deliveryService.findUnknownCountry();
+  }
 
 
 }
+
+
+
+

@@ -1,4 +1,4 @@
-import { IsNotEmpty, Matches, IsDateString, IsUrl, } from 'class-validator';
+import { IsNotEmpty, Matches, IsDateString, IsUrl, IsOptional, IsString, } from 'class-validator';
 
 export class CreateDeliveryDto {
   orderId: number;
@@ -16,9 +16,13 @@ export class CreateDeliveryDto {
 
   @IsNotEmpty({ message: 'Date is required' })
   @IsDateString({}, { message: 'Date must be valid (YYYY-MM-DD)'})
-  date: string;
+  joiningDate: string;
 
   @IsNotEmpty({ message: 'Social media link is required'})
   @IsUrl({}, {message: 'Social media link must be a valid URL'})
   socialMediaLink: string;
+
+  @IsOptional()
+  @IsString()
+  country?: string;
 }
