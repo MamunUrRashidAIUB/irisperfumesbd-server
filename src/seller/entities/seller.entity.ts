@@ -22,6 +22,12 @@ export class Seller {
   @Column({ type: 'bigint', unsigned: true })
   phone: number;
 
+  @Column({ unique: true})
+  email: string;
+
+  @Column( )
+  password: string;
+
   @OneToOne(() => SellerProfile, (profile) => profile.seller)
   profile: SellerProfile;
 

@@ -31,7 +31,7 @@ export class SellerRegistrationDto {
   gender: string;
 
   @IsNumberString({}, { message: 'Phone number must contain only digits' })
-  phone: string;
+  phone: number;
 }
 
 export class CreateSellerDto {

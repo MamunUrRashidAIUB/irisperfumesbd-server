@@ -1,5 +1,5 @@
 import { CreatePerfumeDto, CreateSellerDto, SellerRegistrationDto } from './dto/create-seller.dto';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { UpdatePerfumeDto } from './dto/update-seller.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Seller } from './entities/seller.entity';
@@ -7,18 +7,40 @@ import { IsNull, Repository } from 'typeorm';
 import { UpdatePhoneDto } from './dto/update-phone.dto';
 import { Perfume } from './entities/perfume.entity';
 import { SellerProfile } from './entities/seller-profile.entity';
+import * as bcrypt from 'bcrypt';
 @Injectable()
 export class SellerService {
-    registerSeller(sellerDto: SellerRegistrationDto) {
-        return {
-            success: true,
-            message: 'Seller registered successfully',
-            data: sellerDto,
-        };
+
+  //hash password
+  async hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, 10);
+  }
+     // Register seller (hashing + http exception)
+  async registerSeller(sellerDto: SellerRegistrationDto) {
+    const exists = await this.repo.findOne({
+      where: {email: sellerDto.email },
+    });
+
+    if (exists) {
+      throw new HttpException('Email already exists', HttpStatus.BAD_REQUEST);
     }
+
+    const hashed = await this.hashPassword(sellerDto.password);
+
+    const seller = this.repo.create({
+      ...sellerDto,
+      password: hashed,
+    });
+
+    return this.repo.save(seller);
+  }
+
+
     private perfumes: any[] = [];
     private orders: any[] = [];
     private perfumeId = 1;
+
+
 
     createPerfume(createPerfumeDto: CreatePerfumeDto) {
         const newPerfume = { id: this.perfumeId++, ...createPerfumeDto };
@@ -81,6 +103,7 @@ updateStock(id: number, quantity: number) {
     @InjectRepository(SellerProfile) private profileRepo: Repository<SellerProfile>,
     @InjectRepository(Perfume) private perfumeRepo: Repository<Perfume>,
   ) {}
+
 
   // 1. Create Seller
   createSeller(dto: CreateSellerDto) {

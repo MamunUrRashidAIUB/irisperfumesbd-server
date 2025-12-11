@@ -1,3 +1,4 @@
+import { AuthModule } from './../auth/auth.module';
 import { Module } from "@nestjs/common";
 import { SellerController } from "./seller.controller";
 import { SellerService } from "./seller.service";
@@ -6,9 +7,10 @@ import { Seller } from "./entities/seller.entity";
 import { SellerProfile } from "./entities/seller-profile.entity";
 import { Perfume } from "./entities/perfume.entity";
 
+
 @Module({
     controllers: [SellerController],
     providers: [SellerService],
-    imports: [TypeOrmModule.forFeature([Seller, SellerProfile, Perfume])],
+    imports: [TypeOrmModule.forFeature([Seller, SellerProfile, Perfume]), AuthModule],
 })
 export class SellerModule {}

@@ -1,12 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UseGuards } from "@nestjs/common";
 import { SellerService } from "./seller.service";
 import { CreatePerfumeDto, CreateSellerDto, SellerRegistrationDto } from "./dto/create-seller.dto";
 import { UpdatePerfumeDto } from "./dto/update-seller.dto";
 import { UpdatePhoneDto } from "./dto/update-phone.dto";
+import { AuthService } from "../auth/auth.service";
+import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
 
 @Controller('seller')
 export class SellerController {
-    constructor(private readonly sellerService: SellerService) {}
+    constructor(private readonly sellerService: SellerService, private readonly authService: AuthService) {}
 
     @Post('register')
     registerSeller(@Body() sellerDto: SellerRegistrationDto) {
@@ -102,11 +104,14 @@ export class SellerController {
   //Perfume Endpoints
   //
 
-    @Post(':id/perfume')
+
+  
+  @Post(':id/perfume')
   createPerfumes(@Param('id') sellerId: string, @Body() dto: any) {
-    return this.sellerService.createPerfumes(sellerId, dto);
+  return this.sellerService.createPerfumes(sellerId, dto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id/perfumes')
   getPerfumes(@Param('id') sellerId: string) {
     return this.sellerService.getSellerPerfumes(sellerId);
@@ -119,5 +124,16 @@ export class SellerController {
   ) {
     return this.sellerService.deletePerfume(sellerId, perfumeId);
   }
+
+
+
+
+  @Post('login')
+login(@Body() { email }: { email: string }) {
+  return this.authService.login({ email });
+}
+
+
+
 
 }
