@@ -76,4 +76,48 @@ export class SellerController {
     return this.sellerService.deleteSeller(id);
   }
 
+
+
+  //
+  // Seller Profile Endpoints
+
+  @Post(':id/profile')
+  createOrUpdateProfile(@Param('id') sellerId: string, @Body() dto: any) {
+    return this.sellerService.createOrUpdateProfile(sellerId, dto);
+  }
+
+  @Get(':id/profile')
+  getProfile(@Param('id') sellerId: string) {
+    return this.sellerService.getSellerProfile(sellerId);
+  }
+
+  @Delete(':id/profile')
+  deleteProfile(@Param('id') sellerId: string) {
+    return this.sellerService.deleteSellerProfile(sellerId);
+  }
+
+
+  
+  //
+  //Perfume Endpoints
+  //
+
+    @Post(':id/perfume')
+  createPerfumes(@Param('id') sellerId: string, @Body() dto: any) {
+    return this.sellerService.createPerfumes(sellerId, dto);
+  }
+
+  @Get(':id/perfumes')
+  getPerfumes(@Param('id') sellerId: string) {
+    return this.sellerService.getSellerPerfumes(sellerId);
+  }
+
+  @Delete(':sellerId/perfume/:perfumeId')
+  deletePerfume(
+    @Param('sellerId') sellerId: string,
+    @Param('perfumeId') perfumeId: number,
+  ) {
+    return this.sellerService.deletePerfume(sellerId, perfumeId);
+  }
+
 }

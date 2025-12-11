@@ -1,10 +1,12 @@
 import { CreatePerfumeDto, CreateSellerDto, SellerRegistrationDto } from './dto/create-seller.dto';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { UpdatePerfumeDto } from './dto/update-seller.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Seller } from './entities/seller.entity';
 import { IsNull, Repository } from 'typeorm';
 import { UpdatePhoneDto } from './dto/update-phone.dto';
+import { Perfume } from './entities/perfume.entity';
+import { SellerProfile } from './entities/seller-profile.entity';
 @Injectable()
 export class SellerService {
     registerSeller(sellerDto: SellerRegistrationDto) {
@@ -76,6 +78,8 @@ updateStock(id: number, quantity: number) {
 
    constructor(
     @InjectRepository(Seller) private repo: Repository<Seller>,
+    @InjectRepository(SellerProfile) private profileRepo: Repository<SellerProfile>,
+    @InjectRepository(Perfume) private perfumeRepo: Repository<Perfume>,
   ) {}
 
   // 1. Create Seller
@@ -101,4 +105,89 @@ updateStock(id: number, quantity: number) {
   deleteSeller(id: string) {
     return this.repo.delete(id);
   }
+
+
+
+  //
+  // One to One relation: Seller Profile
+
+async createOrUpdateProfile(sellerId: string, dto: any) {
+    const seller = await this.repo.findOne({ where: { id: sellerId } });
+
+    if (!seller) {
+      throw new NotFoundException('Seller not found');
+    }
+
+    let profile = await this.profileRepo.findOne({
+      where: { seller: { id: sellerId } },
+    });
+
+    if (profile) {
+      // update existing
+      profile.address = dto.address;
+      profile.city = dto.city;
+    } else {
+      // create new
+      profile = this.profileRepo.create({
+        address: dto.address,
+        city: dto.city,
+        seller: seller,
+      });
+    }
+
+    return this.profileRepo.save(profile);
+  }
+
+  getSellerProfile(sellerId: string) {
+    return this.profileRepo.findOne({
+      where: { seller: { id: sellerId } },
+      relations: ['seller'],
+    });
+  }
+
+  async deleteSellerProfile(sellerId: string) {
+    const profile = await this.profileRepo.findOne({
+      where: { seller: { id: sellerId } },
+    });
+
+    if (!profile) throw new NotFoundException('Profile not found');
+
+    return this.profileRepo.remove(profile);
+  }
+  
+
+
+  //
+  // One to Many relation: Perfumes
+
+   async createPerfumes(sellerId: string, dto: any) {
+    const seller = await this.repo.findOne({ where: { id: sellerId } });
+
+    if (!seller) throw new NotFoundException('Seller not found');
+
+    const perfume = this.perfumeRepo.create({
+      name: dto.name,
+      seller: seller,
+    });
+
+    return this.perfumeRepo.save(perfume);
+  }
+
+  getSellerPerfumes(sellerId: string) {
+    return this.perfumeRepo.find({
+      where: { seller: { id: sellerId } },
+    });
+  }
+
+  async deletePerfume(sellerId: string, perfumeId: number) {
+    const perfume = await this.perfumeRepo.findOne({
+      where: { id: perfumeId, seller: { id: sellerId } },
+    });
+
+    if (!perfume) throw new NotFoundException('Perfume not found');
+
+    return this.perfumeRepo.remove(perfume);
+  }
+
+
 }

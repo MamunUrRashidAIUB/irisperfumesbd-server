@@ -1,4 +1,6 @@
-import { Entity, Column, PrimaryColumn, BeforeInsert } from 'typeorm';
+import { Entity, Column, PrimaryColumn, BeforeInsert, OneToOne, OneToMany } from 'typeorm';
+import { Perfume } from './perfume.entity';
+import { SellerProfile } from './seller-profile.entity';
 
 @Entity()
 export class Seller {
@@ -19,4 +21,10 @@ export class Seller {
 
   @Column({ type: 'bigint', unsigned: true })
   phone: number;
+
+  @OneToOne(() => SellerProfile, (profile) => profile.seller)
+  profile: SellerProfile;
+
+  @OneToMany(() => Perfume, (perfume) => perfume.seller)
+  perfumes: Perfume[];
 }
