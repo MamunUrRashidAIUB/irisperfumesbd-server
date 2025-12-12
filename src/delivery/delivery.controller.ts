@@ -1,128 +1,30 @@
-import { Controller, Get, Post, Put, Patch, Delete, Param, Body, Query, UsePipes, ValidationPipe, UploadedFile, UseInterceptors, BadRequestException, ParseIntPipe } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Query,
+  UsePipes,
+  ValidationPipe,
+  ParseIntPipe,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { DeliveryService } from './delivery.service';
 import { CreateDeliveryDto } from './dto/createDelivery.dto';
-import { Res } from '@nestjs/common';
-import type { Response } from 'express';
-import { join } from 'path';
-import { existsSync } from 'fs';
 import { UpdateCountryDto } from './dto/updateCountry.dto';
-import { UseGuards, Req } from '@nestjs/common';
-import { Request } from 'express';
+import { CreateOrderDto } from './dto/order.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import type { Request } from 'express';
+import { ForbiddenException } from '@nestjs/common';
 
 @Controller('delivery')
 export class DeliveryController {
   constructor(private readonly deliveryService: DeliveryService) {}
-
-  /*@Post()
-  @UsePipes(new ValidationPipe())
-  create(@Body() dto: CreateDeliveryDto) {
-    return this.deliveryService.create(dto);
-  }
-
-  @Get()
-  findAll() {
-    return this.deliveryService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: number) {
-    return this.deliveryService.findOne(Number(id));
-  }
-
-  @Put(':id/assign')
-  assign(@Param('id') id: number, @Body('deliveryPerson') deliveryPerson: string) {
-    return this.deliveryService.assignDeliveryPerson(Number(id), deliveryPerson);
-  }
-
-  @Patch(':id/status')
-  updateStatus(@Param('id') id: number, @Body('status') status: string) {
-    return this.deliveryService.updateStatus(Number(id), status);
-  }
-
-  @Patch(':id/location')
-  updateLocation(@Param('id') id: number, @Body('currentLocation') currentLocation: string) {
-    return this.deliveryService.updateLocation(Number(id), currentLocation);
-  }
-
-  @Get('customer/:customerId')
-  findByCustomer(@Param('customerId') customerId: string) {
-    return this.deliveryService.findByCustomer(Number(customerId));
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.deliveryService.remove(Number(id));
-  }
-
-  @Get('filter')
-  filterDeliveries(@Query('status') status: string) {
-   return this.deliveryService.filterByStatus(status);
- } */
- 
- /* @Post('uploads')
- @UseInterceptors(
-  FileInterceptor('file', {
-    storage: diskStorage({
-      destination: join(process.cwd(), 'src', 'uploads'),
-      filename: (req, file, callback) => {
-        const uniqueName = Date.now() + '-' + file.originalname;
-        callback(null, uniqueName);
-      },
-    }),
-    fileFilter: (req, file, callback) => {
-      if (extname(file.originalname) !== '.pdf') {
-        return callback(
-          new BadRequestException('Only PDF files are allowed!'),
-          false,
-        );
-      }
-      callback(null, true)
-    },
-    limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB limit
-    }),
- )
- uploadFile(@UploadedFile() file: Express.Multer.File) {
-  if (!file) {
-    throw new BadRequestException('File upload failed');
-  }
-  return {
-    message: 'File uploaded successfully',
-    filename: file.filename,
-    size: file.size,
-  };
-}
-
-@Post('upload-images')
-@UseInterceptors(
-  FileInterceptor('file', {
-    fileFilter: (req, file, callback) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png)$/)) {
-        return callback(
-          new BadRequestException('Only image files are allowed!'),
-          false,
-        );
-      }
-      callback(null, true);
-    },
-    limits: { fileSize: 2 * 1024 * 1024 },
-  }),
-)
-uploadImage(@UploadedFile() file: Express.Multer.File) {
-  if (!file) throw new BadRequestException('Invalid image file');
-  return { message: 'Image uploaded successfully', size: file.size };
-}
-
-@Get('file/:filename')
-getFile(@Param('filename') filename: string, @Res() res: Response) {
-  const filePath = join(process.cwd(), 'src', 'uploads', filename);
-  if (!existsSync(filePath)) {
-    return res.status(404).json({ message: 'File not found' });
-  }
-  return res.sendFile(filePath);
-} */
 
   @Post()
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
@@ -139,9 +41,9 @@ getFile(@Param('filename') filename: string, @Res() res: Response) {
   }
 
   @Get()
-findAll() {
-  return this.deliveryService.findAll();
-}
+  findAll() {
+    return this.deliveryService.findAll();
+  }
 
   @Get('by-date')
   getByDate(@Query('date') date: string) {
@@ -153,9 +55,93 @@ findAll() {
     return this.deliveryService.findUnknownCountry();
   }
 
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.deliveryService.findOne(id);
+  }
 
+  @Put(':id')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  updateFull(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CreateDeliveryDto,
+  ) {
+    return this.deliveryService.updateFull(id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
+  const user = req.user as any;
+  if (user.deliveryId !== id) {
+    throw new ForbiddenException('Not allowed');
+  }
+
+    return this.deliveryService.remove(id);
+ }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/orders')
+   createOrder(
+   @Param('id', ParseIntPipe) id: number,
+   @Body() dto: CreateOrderDto,
+   @Req() req: Request,
+ ) {
+  const user = req.user as any;
+  if (user.deliveryId !== id) {
+    throw new ForbiddenException('Not allowed to create orders for others');
+  }
+
+    return this.deliveryService.createOrder(id, dto);
 }
 
+ @UseGuards(JwtAuthGuard)
+@Get(':id/orders')
+getOrders(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
+  const user = req.user as any;
+  if (user.deliveryId !== id) {
+    throw new ForbiddenException('Not allowed to view others orders');
+  }
 
+  return this.deliveryService.getOrdersForDelivery(id);
+}
 
+  @UseGuards(JwtAuthGuard)
+  @Delete('order/:orderId')
+  deleteOrder(
+    @Param('orderId', ParseIntPipe) orderId: number,
+    @Req() req: Request,
+  ) {
+   
+    return this.deliveryService.deleteOrder(orderId);
+  }
 
+  @Post(':id/login')
+  createLogin(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { email: string; password: string },
+  ) {
+    return this.deliveryService.createLoginForDelivery(
+      id,
+      body.email,
+      body.password,
+    );
+  }
+
+@UseGuards(JwtAuthGuard)
+@Get(':id/login')
+getLogin(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
+  const user = req.user as any;
+  if (user.deliveryId !== id) {
+    throw new ForbiddenException('Not allowed to view login of others');
+  }
+
+  return this.deliveryService.getLoginByDelivery(id);
+}
+
+@Get('order/:orderId')
+getSingleOrder(@Param('orderId', ParseIntPipe) orderId: number) {
+  return this.deliveryService.getOrderWithDelivery(orderId);
+}
+
+}

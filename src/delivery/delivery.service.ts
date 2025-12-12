@@ -1,90 +1,48 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateDeliveryDto } from './dto/createDelivery.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Delivery } from './entities/delivery.entity';
 import { Repository, Between } from 'typeorm';
-
+import { Delivery } from './entities/delivery.entity';
+import { Order } from './entities/order.entity';
+import { DeliveryLogin } from './entities/delivery-login.entity';
+import { CreateDeliveryDbDto } from './dto/createDeliveryDb.dto';
+import { CreateOrderDto } from './dto/order.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class DeliveryService {
-  /*private deliveries: any[] = [];
-  private idCounter = 1;
-
-  create(dto: CreateDeliveryDto) {
-    const newDelivery = {
-      id: this.idCounter++,
-      ...dto,
-      status: 'pending',
-      createdAt: new Date(),
-    };
-    this.deliveries.push(newDelivery);
-    return { message: 'Delivery created successfully', 
-             data: newDelivery };
-  }
-
-  findAll() {
-    return { message: 'All deliveries', data: this.deliveries };
-  }
-
-  findOne(id: number) {
-    const delivery = this.deliveries.find((d) => d.id === id);
-    if (!delivery) return { message: 'Delivery not found' };
-    return { message: 'Delivery found', data: delivery };
-  }
-
-  assignDeliveryPerson(id: number, deliveryPerson: string) {
-    const delivery = this.deliveries.find((d) => d.id === id);
-    if (!delivery) return { message: 'Delivery not found' };
-    delivery.deliveryPerson = deliveryPerson;
-    delivery.status = 'assigned';
-    return { message: 'Delivery person assigned', data: delivery };
-  }
-
-  updateStatus(id: number, status: string) {
-    const delivery = this.deliveries.find((d) => d.id === id);
-    if (!delivery) return { message: 'Delivery not found' };
-    delivery.status = status;
-    return { message: 'Delivery status updated', data: delivery };
-  }
-
-  updateLocation(id: number, location: string) {
-    const delivery = this.deliveries.find((d) => d.id === id);
-    if (!delivery) return { message: 'Delivery not found' };
-    delivery.currentLocation = location;
-    return { message: 'Delivery location updated', data: delivery };
-  }
-
-  findByCustomer(customerId: number) {
-    const customerDeliveries = this.deliveries.filter(
-      (d) => d.customerId === customerId,
-    );
-    return { message: 'Deliveries for customer', data: customerDeliveries };
-  }
-
-  remove(id: number) {
-    const index = this.deliveries.findIndex((d) => d.id === id);
-    if (index === -1) return { message: 'Delivery not found' };
-    const deleted = this.deliveries.splice(index, 1);
-    return { message: 'Delivery deleted', data: deleted };
-  }
-
-  filterByStatus(status: string) {
-  if (!status) {
-    return { message: 'Please provide a status value in the query, e.g., /delivery/filter?status=pending' };
-  }
-  const filtered = this.deliveries.filter((d) => d.status === status);
-  return { message: `Deliveries with status '${status}'`, data: filtered };
-} */
-
-constructor(
+  constructor(
     @InjectRepository(Delivery)
     private deliveryRepo: Repository<Delivery>,
+
+    @InjectRepository(Order)
+    private orderRepo: Repository<Order>,
+
+    @InjectRepository(DeliveryLogin)
+    private loginRepo: Repository<DeliveryLogin>,
   ) {}
 
-  async create(dto: CreateDeliveryDto) {
+  async create(dto: CreateDeliveryDbDto) {
     const delivery = this.deliveryRepo.create(dto);
     const saved = await this.deliveryRepo.save(delivery);
     return { message: 'Delivery created successfully', data: { id: saved.id } };
+  }
+
+  async findAll() {
+    const list = await this.deliveryRepo.find();
+    return { message: 'All deliveries', data: list };
+  }
+
+  async findOne(id: number) {
+    const d = await this.deliveryRepo.findOne({ where: { id }, relations: ['orders', 'login'] });
+    if (!d) throw new NotFoundException('Delivery not found');
+    return { message: 'Delivery found', data: d };
+  }
+
+  async updateFull(id: number, dto: CreateDeliveryDbDto) {
+    const delivery = await this.deliveryRepo.preload({ id, ...dto });
+    if (!delivery) throw new NotFoundException('Delivery not found');
+    const saved = await this.deliveryRepo.save(delivery);
+    return { message: 'Delivery updated', data: saved };
   }
 
   async updateCountry(id: number, country: string) {
@@ -93,29 +51,91 @@ constructor(
     return { message: 'Country updated successfully', data: { id, country } };
   }
 
+  async remove(id: number) {
+    const res = await this.deliveryRepo.delete(id);
+    if (res.affected === 0) throw new NotFoundException('Delivery not found');
+    return { message: 'Delivery deleted', data: { id } };
+  }
+
   async findByDate(date: string) {
     const start = new Date(date);
     start.setHours(0, 0, 0, 0);
-
     const end = new Date(date);
     end.setHours(23, 59, 59, 999);
-
     const results = await this.deliveryRepo.find({
       where: { joiningDate: Between(start, end) },
     });
     return { message: `Deliveries on ${date}`, data: results };
-
   }
 
-    async findUnknownCountry() {
-    const results = await this.deliveryRepo.find({
-      where: { country: 'Unknown' },
-    });
+  async findUnknownCountry() {
+    const results = await this.deliveryRepo.find({ where: { country: 'Unknown' } });
     return { message: 'Unknown country deliveries', data: results };
   }
 
-  findAll() {
-  return this.deliveryRepo.find();
+
+  async createOrder(deliveryId: number, dto: CreateOrderDto) {
+    const delivery = await this.deliveryRepo.findOne({ where: { id: deliveryId } });
+    if (!delivery) throw new NotFoundException('Delivery not found');
+
+    const order = this.orderRepo.create({ ...dto, delivery });
+    const saved = await this.orderRepo.save(order);
+    return { message: 'Order created', data: saved };
+  }
+
+  async getOrdersForDelivery(deliveryId: number) {
+    const orders = await this.orderRepo.find({
+      where: { delivery: { id: deliveryId } },
+      relations: ['delivery'],
+    });
+    return { message: `Orders for delivery ${deliveryId}`, data: orders };
+  }
+
+  async deleteOrder(orderId: number) {
+    const res = await this.orderRepo.delete(orderId);
+    if (res.affected === 0) throw new NotFoundException('Order not found');
+    return { message: 'Order deleted', data: { orderId } };
+  }
+
+  async createLoginForDelivery(deliveryId: number, email: string, password: string) {
+  const delivery = await this.deliveryRepo.findOne({ where: { id: deliveryId } });
+  if (!delivery) throw new NotFoundException('Delivery not found');
+
+  const existing = await this.loginRepo.findOne({ where: { email } });
+  if (existing) {
+    throw new Error('Email already registered');
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hashed = await bcrypt.hash(password, salt);
+
+  const login = this.loginRepo.create({ email, password: hashed, delivery });
+  const saved = await this.loginRepo.save(login);
+  return { message: 'Login created', data: { id: saved.id, deliveryId: delivery.id } };
 }
 
+async getLoginByDelivery(deliveryId: number) {
+  const login = await this.loginRepo.findOne({
+    where: { delivery: { id: deliveryId } },
+    relations: ['delivery'],
+  });
+
+  if (!login) throw new NotFoundException('Login not found');
+
+  return { message: 'Login found', data: login };
+}
+
+async getOrderWithDelivery(orderId: number) {
+  const order = await this.orderRepo.findOne({
+    where: { id: orderId },
+    relations: ['delivery'],
+  });
+
+  if (!order) throw new NotFoundException('Order not found');
+
+  return {
+    message: 'Order with delivery fetched',
+    data: order,
+  };
+}
 }
