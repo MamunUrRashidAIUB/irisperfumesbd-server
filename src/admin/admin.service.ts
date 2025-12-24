@@ -25,6 +25,7 @@ export class AdminService {
       password: hashed,
       role: createAdminDto.role,
       status: createAdminDto.status,
+      nidNumber: createAdminDto.nidNumber,
     } as any);
     const saved = await this.repo.save(admin);
     return { message: 'Admin created', data: saved };

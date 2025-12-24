@@ -22,6 +22,9 @@ export class Admin {
   @Column({ type: 'varchar', length: 16, default: 'active' })
   status?: string;
 
+  @Column({ nullable: true })
+  nidNumber?: string;
+
   @OneToOne(() => AdminProfile, profile => profile.admin)
   profile: AdminProfile;
 

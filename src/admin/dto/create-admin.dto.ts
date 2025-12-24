@@ -5,4 +5,5 @@ export class CreateAdminDto {
   role?: string;
   permissions?: string[];
   status?: string;
+  nidNumber?: string;
 }
