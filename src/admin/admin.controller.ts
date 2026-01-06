@@ -28,14 +28,11 @@ export class AdminController {
 
   @Post('login')
   async login(@Body('email') email: string, @Body('password') password: string) {
-    try {
-      const admin = await this.authService.validateAdmin(email, password);
-      if (!admin) throw new UnauthorizedException('Invalid credentials');
-      return this.authService.login(admin);
-    } catch (err: any) {
-      if (err instanceof UnauthorizedException) throw err;
-      throw new InternalServerErrorException(err?.message || 'Internal server error');
+    const admin = await this.authService.validateAdmin(email, password);
+    if (!admin || admin.role !== 'admin') {
+      throw new UnauthorizedException('Invalid credentials');
     }
+    return this.authService.login(admin);
   }
 
   @Get()
