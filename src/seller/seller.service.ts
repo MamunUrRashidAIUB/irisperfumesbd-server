@@ -8,6 +8,7 @@ import { UpdatePhoneDto } from './dto/update-phone.dto';
 import { Perfume } from './entities/perfume.entity';
 import { SellerProfile } from './entities/seller-profile.entity';
 import * as bcrypt from 'bcrypt';
+
 @Injectable()
 export class SellerService {
 
@@ -46,6 +47,22 @@ export class SellerService {
         const newPerfume = { id: this.perfumeId++, ...createPerfumeDto };
         this.perfumes.push(newPerfume);
         return { success: true, message: 'perfume added successfully', data: newPerfume };
+}
+
+async loginSeller(email: string, password: string) {
+  const seller = await this.repo.findOne({ where: { email } });
+  if (!seller) {
+    throw new HttpException('Invalid email or password', HttpStatus.UNAUTHORIZED);
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, seller.password);
+  if (!isPasswordValid) {
+    throw new HttpException('Invalid email or password', HttpStatus.UNAUTHORIZED);
+  }
+
+  // If you want a token, generate it here using JwtService
+  // For now, just return seller info
+  return { message: 'Login successful', sellerId: seller.id };
 }
 
 findAllPerfumes(brand?: string) {
@@ -103,6 +120,8 @@ updateStock(id: number, quantity: number) {
     @InjectRepository(SellerProfile) private profileRepo: Repository<SellerProfile>,
     @InjectRepository(Perfume) private perfumeRepo: Repository<Perfume>,
   ) {}
+
+  
 
 
   // 1. Create Seller

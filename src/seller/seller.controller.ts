@@ -125,14 +125,11 @@ export class SellerController {
     return this.sellerService.deletePerfume(sellerId, perfumeId);
   }
 
-
-
-
   @Post('login')
-login(@Body() { email }: { email: string }) {
-  return this.authService.login({ email });
+async loginSeller(@Body() body: { email: string; password: string }) {
+  const { email, password } = body;
+  return this.sellerService.loginSeller(email, password);
 }
-
 
 
 
