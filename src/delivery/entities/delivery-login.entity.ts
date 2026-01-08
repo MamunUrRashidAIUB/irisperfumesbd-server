@@ -12,7 +12,9 @@ export class DeliveryLogin {
   @Column()
   password: string;
 
-  @OneToOne(() => Delivery, (delivery) => delivery.login, { onDelete: 'CASCADE' })
+  @OneToOne(() => Delivery, delivery => delivery.login, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn()
   delivery: Delivery;
 }

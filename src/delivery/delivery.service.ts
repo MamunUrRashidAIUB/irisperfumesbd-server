@@ -101,18 +101,22 @@ export class DeliveryService {
   const delivery = await this.deliveryRepo.findOne({ where: { id: deliveryId } });
   if (!delivery) throw new NotFoundException('Delivery not found');
 
-  const existing = await this.loginRepo.findOne({ where: { email } });
-  if (existing) {
-    throw new Error('Email already registered');
-  }
+  const hashedPassword = await bcrypt.hash(password, 10); // ✅ ADD THIS
 
-  const salt = await bcrypt.genSalt(10);
-  const hashed = await bcrypt.hash(password, salt);
+  const login = this.loginRepo.create({
+    email,
+    password: hashedPassword, // ✅ STORE HASHED PASSWORD
+    delivery,
+  });
 
-  const login = this.loginRepo.create({ email, password: hashed, delivery });
   const saved = await this.loginRepo.save(login);
-  return { message: 'Login created', data: { id: saved.id, deliveryId: delivery.id } };
+
+  return {
+    message: 'Login created',
+    data: { id: saved.id, email: saved.email },
+  };
 }
+
 
 async getLoginByDelivery(deliveryId: number) {
   const login = await this.loginRepo.findOne({

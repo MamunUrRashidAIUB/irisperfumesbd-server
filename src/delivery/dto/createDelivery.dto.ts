@@ -16,7 +16,7 @@ export class CreateDeliveryDto {
 
   @IsNotEmpty({ message: 'Date is required' })
   @IsDateString({}, { message: 'Date must be valid (YYYY-MM-DD)'})
-  joiningDate: string;
+  dateOfBirth: string;
 
   @IsNotEmpty({ message: 'Social media link is required'})
   @IsUrl({}, {message: 'Social media link must be a valid URL'})
