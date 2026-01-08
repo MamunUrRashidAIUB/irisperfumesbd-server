@@ -14,10 +14,16 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string) {
-    const user = await this.loginRepo.findOne({ where: { email }, relations: ['delivery'] });
+    const user = await this.loginRepo.findOne({
+      where: { email },
+      relations: ['delivery'],
+    });
+
     if (!user) return null;
+
     const matched = await bcrypt.compare(password, user.password);
     if (!matched) return null;
+
     return user;
   }
 
@@ -25,8 +31,14 @@ export class AuthService {
     const user = await this.validateUser(dto.email, dto.password);
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
-    const payload = { sub: user.delivery.id, email: user.email };
-    const access_token = this.jwtService.sign(payload);
-    return { access_token, deliveryId: user.delivery.id };
+    const payload = {
+      sub: user.delivery.id,
+      email: user.email,
+    };
+
+    return {
+      access_token: this.jwtService.sign(payload),
+      deliveryId: user.delivery.id,
+    };
   }
 }

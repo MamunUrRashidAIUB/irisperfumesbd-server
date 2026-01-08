@@ -10,14 +10,14 @@ import { JwtStrategy } from './jwt.strategy';
 import { jwtConstants } from './constants';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([DeliveryLogin, Delivery]),
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({
-  secret: jwtConstants.secret,
-  signOptions: { expiresIn: '1h' }, // FIXED
-}),
-  ],
+imports: [
+  TypeOrmModule.forFeature([DeliveryLogin, Delivery]),
+  PassportModule,
+  JwtModule.register({
+    secret: jwtConstants.secret,
+    signOptions: { expiresIn: '1d' },
+  }),
+],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
   exports: [AuthService],
