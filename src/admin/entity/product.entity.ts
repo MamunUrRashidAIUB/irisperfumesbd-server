@@ -12,6 +12,15 @@ export class Product {
   @Column()
   price: number;
 
+  @Column()
+brand: string;
+
+@Column()
+image: string;
+
+@Column()
+stock: number;
+
   @ManyToOne(() => Admin, admin => admin.products)
   admin: Admin;
 }
