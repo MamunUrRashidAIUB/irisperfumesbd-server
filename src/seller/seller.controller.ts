@@ -111,7 +111,7 @@ export class SellerController {
   return this.sellerService.createPerfumes(sellerId, dto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  //@UseGuards(JwtAuthGuard)
   @Get(':id/perfumes')
   getPerfumes(@Param('id') sellerId: string) {
     return this.sellerService.getSellerPerfumes(sellerId);
